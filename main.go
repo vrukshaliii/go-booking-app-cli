@@ -2,14 +2,24 @@ package main
 
 import (
 	"fmt"
-	"strings"
+	"golang-booking-app/helper"
+	"time"
 )
 
 const conferenceTickets int = 50
 
 var conferenceName = "Go Conference"
 var remainingTickets uint = 50
-var bookings []string
+var bookings []UserData
+
+
+// struct type -> can combine all types of data type for all properties
+type UserData struct {
+	firstName string
+	lastName string
+	email string
+	numberofTickets uint
+}
 
 func main() {
 
@@ -20,11 +30,14 @@ func main() {
 
 		firstName, lastName, email, userTickets := getUserInput()
 
-		isvalidName, isvalidEmail, isvalidTicketNumber := validateUserInput(firstName, lastName, email, userTickets)
+		isvalidName, isvalidEmail, isvalidTicketNumber := helper.ValidateUserInput(firstName, lastName, email, userTickets, remainingTickets)
 
 		if isvalidName && isvalidEmail && isvalidTicketNumber {
 
 			bookTicket(userTickets, firstName, lastName, email)
+
+			// just use go keyword for concurrency
+			go sendTicket(userTickets, firstName, lastName, email)
 
 			// calls functions print first names
 			firstNames := getfirstNames()
@@ -78,19 +91,12 @@ func getUserInput() (string, string, string, uint) {
 	return firstName, lastName, email, userTickets
 }
 
-func validateUserInput(firstName string, lastName string, email string, userTickets uint) (bool, bool, bool) {
-	isvalidName := len(firstName) >= 2 && len(lastName) >= 2
-	isvalidEmail := strings.Contains(email, "@")
-	isvalidTicketNumber := userTickets > 0 && userTickets <= remainingTickets
-
-	return isvalidName, isvalidEmail, isvalidTicketNumber
-}
-
 func getfirstNames() []string {
 	firstNames := []string{}
 	for _, booking := range bookings {
-		var names = strings.Fields(booking)
-		firstNames = append(firstNames, names[0])
+		// var names = strings.Fields(booking)
+		//changed to map so removed the above line
+		firstNames = append(firstNames, booking.firstName)
 	}
 
 	return firstNames
@@ -99,12 +105,46 @@ func getfirstNames() []string {
 func bookTicket(userTickets uint, firstName string, lastName string, email string) {
 	remainingTickets = remainingTickets - userTickets
 
-	// Slices
-	bookings = append(bookings, firstName+" "+lastName)
+	// using struct type
+	var userData = UserData{
+		firstName: firstName,
+		lastName: lastName,
+		email: email,
+		numberofTickets: userTickets,
+	}
+
+	// creating a map for users
+	// userData["firstName"] = firstName
+	// userData["lastName"] = lastName
+	// userData["email"] = email
+	// userData["numberofTickets"] = strconv.FormatUint(uint64(userTickets), 10)
+
+	bookings = append(bookings, userData)
+
+	fmt.Printf("List of bookings is %v\n", bookings)
 
 	fmt.Printf("Thankyou %v %v for booking %v tickets, you will soon recieve an email from us at %v\n", firstName, lastName, userTickets, email)
 	fmt.Printf("%v tickets are remaining for the conference\n", remainingTickets)
 }
+
+
+// Example of concurrency
+func sendTicket(userTickets uint, firstName string, lastName string, email string) {
+	time.Sleep(10 * time.Second)
+	var ticket = fmt.Sprintf("%v tickets for %v %v\n", userTickets, firstName, lastName)
+	fmt.Println("##########################################################")
+	fmt.Printf("Sending ticket:\n %v to email address %v\n", ticket, email)
+	fmt.Println("##########################################################")
+}
+
+
+
+
+
+
+
+
+
 
 // Extras ******ignore*********
 
